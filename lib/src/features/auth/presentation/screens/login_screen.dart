@@ -1,44 +1,102 @@
 import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../../../core/constants/app_colors.dart';
-import '../widgets/auth_shell.dart';
-import 'otp_screen.dart';
+import '../../state/login_controller.dart';
+import '../widgets/login_header.dart';
 
-class LoginScreen extends StatelessWidget {
+class LoginScreen extends ConsumerStatefulWidget {
   const LoginScreen({super.key});
 
+  static const routeName = 'login';
   static const routePath = '/login';
 
   @override
+  ConsumerState<LoginScreen> createState() => _LoginScreenState();
+}
+
+class _LoginScreenState extends ConsumerState<LoginScreen> {
+  final _formKey = GlobalKey<FormState>();
+
+  @override
   Widget build(BuildContext context) {
-    return AuthShell(
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 36),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const SizedBox(height: 24),
-            const Text('Login', style: TextStyle(fontSize: 52 / 2, fontWeight: FontWeight.w700)),
-            const SizedBox(height: 28),
-            const Text('Phone No.', style: TextStyle(fontSize: 18)),
-            const SizedBox(height: 14),
-            Container(
-              height: 56,
-              decoration: BoxDecoration(color: AppColors.inputGray, borderRadius: BorderRadius.circular(10)),
-              alignment: Alignment.centerLeft,
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: const Text('+91', style: TextStyle(color: Colors.grey, fontSize: 30 / 2)),
+    final state = ref.watch(loginControllerProvider);
+    final controller = ref.read(loginControllerProvider.notifier);
+
+    return Scaffold(
+      body: SafeArea(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
+          child: Form(
+            key: _formKey,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const SizedBox(height: 12),
+                const LoginHeader(),
+                const SizedBox(height: 36),
+                TextFormField(
+                  keyboardType: TextInputType.phone,
+                  decoration: const InputDecoration(
+                    labelText: 'Mobile number',
+                    hintText: '+1 234 567 890',
+                  ),
+                  onChanged: controller.updatePhone,
+                  validator: (value) {
+                    if (value == null || value.trim().isEmpty) {
+                      return 'Please enter mobile number';
+                    }
+                    return null;
+                  },
+                ),
+                const SizedBox(height: 16),
+                TextFormField(
+                  obscureText: true,
+                  decoration: const InputDecoration(
+                    labelText: 'Password',
+                    hintText: '••••••••',
+                  ),
+                  onChanged: controller.updatePassword,
+                  validator: (value) {
+                    if (value == null || value.trim().isEmpty) {
+                      return 'Please enter password';
+                    }
+                    return null;
+                  },
+                ),
+                const SizedBox(height: 12),
+                Align(
+                  alignment: Alignment.centerRight,
+                  child: TextButton(
+                    onPressed: () {},
+                    child: const Text('Forgot password?'),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                ElevatedButton(
+                  onPressed: state.isLoading
+                      ? null
+                      : () async {
+                          if (!_formKey.currentState!.validate()) return;
+                          await controller.submit();
+                        },
+                  child: state.isLoading
+                      ? const SizedBox(
+                          height: 20,
+                          width: 20,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      : const Text('Sign in'),
+                ),
+                const SizedBox(height: 16),
+                Center(
+                  child: TextButton(
+                    onPressed: () {},
+                    child: const Text("Don't have an account? Sign up"),
+                  ),
+                ),
+              ],
             ),
-            const SizedBox(height: 34),
-            ElevatedButton(
-              onPressed: () => context.go(OtpScreen.routePath),
-              style: ElevatedButton.styleFrom(backgroundColor: AppColors.yellow, foregroundColor: Colors.black),
-              child: const Text('Continue'),
-            ),
-            const SizedBox(height: 24),
-            const Center(child: Text.rich(TextSpan(text: "Don't have an account? ", children: [TextSpan(text: 'Create one', style: TextStyle(fontWeight: FontWeight.w700))]))),
-          ],
+          ),
         ),
       ),
     );
